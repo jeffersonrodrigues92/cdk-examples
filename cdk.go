@@ -1,29 +1,49 @@
 package main
 
 import (
+	"os"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	// "github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
 
-type CdkStackProps struct {
+type VpcStackProps struct {
 	awscdk.StackProps
 }
 
-func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) awscdk.Stack {
+func NewVpcStack(scope constructs.Construct, id string, props *VpcStackProps) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	// The code that defines your stack goes here
-
-	// example resource
-	// queue := awssqs.NewQueue(stack, jsii.String("CdkQueue"), &awssqs.QueueProps{
-	// 	VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
-	// })
+	awsec2.NewVpc(stack, &id, &awsec2.VpcProps{
+		VpcName:            jsii.String("vpc"),
+		MaxAzs:             jsii.Number(3),
+		Cidr:               jsii.String("10.0.0.0/16"),
+		EnableDnsHostnames: jsii.Bool(true),
+		EnableDnsSupport:   jsii.Bool(true),
+		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
+			{
+				CidrMask:   jsii.Number(24),
+				Name:       jsii.String("subnet-public-1"),
+				SubnetType: awsec2.SubnetType_PUBLIC,
+			},
+			{
+				CidrMask:   jsii.Number(24),
+				Name:       jsii.String("subnet-public-2"),
+				SubnetType: awsec2.SubnetType_PUBLIC,
+			},
+			{
+				CidrMask:   jsii.Number(24),
+				Name:       jsii.String("subnet-private-3"),
+				SubnetType: awsec2.SubnetType_PUBLIC,
+			},
+		},
+	})
 
 	return stack
 }
@@ -33,7 +53,7 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	NewCdkStack(app, "CdkStack", &CdkStackProps{
+	NewVpcStack(app, "vpc-stack", &VpcStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},
@@ -42,14 +62,14 @@ func main() {
 	app.Synth(nil)
 }
 
-// env determines the AWS environment (account+region) in which our stack is to
-// be deployed. For more information see: https://docs.aws.amazon.com/cdk/latest/guide/environments.html
+// // env determines the AWS environment (account+region) in which our stack is to
+// // be deployed. For more information see: https://docs.aws.amazon.com/cdk/latest/guide/environments.html
 func env() *awscdk.Environment {
 	// If unspecified, this stack will be "environment-agnostic".
 	// Account/Region-dependent features and context lookups will not work, but a
 	// single synthesized template can be deployed anywhere.
 	//---------------------------------------------------------------------------
-	return nil
+	// return nil
 
 	// Uncomment if you know exactly what account and region you want to deploy
 	// the stack to. This is the recommendation for production stacks.
@@ -61,10 +81,10 @@ func env() *awscdk.Environment {
 
 	// Uncomment to specialize this stack for the AWS Account and Region that are
 	// implied by the current CLI configuration. This is recommended for dev
-	// stacks.
+	// stacks.a
 	//---------------------------------------------------------------------------
-	// return &awscdk.Environment{
-	//  Account: jsii.String(os.Getenv("CDK_DEFAULT_ACCOUNT")),
-	//  Region:  jsii.String(os.Getenv("CDK_DEFAULT_REGION")),
-	// }
+	return &awscdk.Environment{
+		// Account: jsii.String(os.Getenv("CDK_DEFAULT_ACCOUNT")),
+		Region: jsii.String(os.Getenv("CDK_DEFAULT_REGION")),
+	}
 }
